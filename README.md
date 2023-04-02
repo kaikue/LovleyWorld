@@ -4,10 +4,9 @@ Palette: Island Joy 16x https://lospec.com/palette-list/island-joy-16
 
 ## TODO
 
-- wall jump
-	- similar to normal- float out at 45 degree angle until max time/released then fall straight down
 - grab
 - use kittenboat musicmanager for peristent bgm transition
+- scene transitions- keep held item & x or y value
 
 - carry objects- throw (press grab) or drop (hold down + press grab)
 	- ladders

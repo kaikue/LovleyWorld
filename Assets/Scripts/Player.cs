@@ -15,10 +15,13 @@ public class Player : MonoBehaviour
     private const float runAcceleration = 15;
     private const float maxRunSpeed = 7;
     private const float jumpForce = 8;
+    private const float walljumpUpForce = 8 / 1.414f;
+    private const float walljumpSideForce = 8 / 1.414f;
     private const float gravityForce = 40;
     private const float maxFallSpeed = 50;
     private const float maxJumpTime = 0.3f;
-    private const float groundForceFriction = 1;
+    private const float maxWalljumpTime = 0.3f;
+    private const float groundForceFriction = 0.8f;
     private const float pitchVariation = 0.15f;
 
     private Rigidbody2D rb;
@@ -33,6 +36,7 @@ public class Player : MonoBehaviour
     private bool canJump = false;
     private bool wasOnGround = false;
     private bool jumpFloating = false;
+    private int walljumpDir = 0;
     private float jumpTimer = 0;
     private Coroutine crtCancelQueuedJump;
     private const float jumpBufferTime = 0.1f; //time before hitting ground a jump will still be queued
@@ -238,16 +242,49 @@ public class Player : MonoBehaviour
             PlaySound(landSound);
         }
 
-        if (jumpQueued && canJump)
+        if (jumpQueued)
         {
-            StopCancelQueuedJump();
-            jumpQueued = false;
-            canJump = false;
-            xForce = 0;
-            jumpFloating = true;
-            jumpTimer = 0;
-            PlaySound(jumpSound);
-            SetAnimState(AnimState.Jump);
+            bool onRight = CheckSide(1, 2, Vector2.right);
+            bool onLeft = CheckSide(3, 4, Vector2.left);
+            if (!onGround)
+            {
+                if (onRight)
+                {
+                    jumpFloating = false;
+                    StopCancelQueuedJump();
+                    jumpQueued = false;
+                    canJump = false;
+                    xForce = 0;
+                    walljumpDir = -1;
+                    jumpTimer = 0;
+                    PlaySound(jumpSound);
+                    SetAnimState(AnimState.Jump);
+                }
+                else if (onLeft)
+                {
+                    jumpFloating = false;
+                    StopCancelQueuedJump();
+                    jumpQueued = false;
+                    canJump = false;
+                    xForce = 0;
+                    walljumpDir = 1;
+                    jumpTimer = 0;
+                    PlaySound(jumpSound);
+                    SetAnimState(AnimState.Jump);
+                }
+            }
+
+            if (canJump)
+            {
+                StopCancelQueuedJump();
+                jumpQueued = false;
+                canJump = false;
+                xForce = 0;
+                jumpFloating = true;
+                jumpTimer = 0;
+                PlaySound(jumpSound);
+                SetAnimState(AnimState.Jump);
+            }
         }
 
         if (jumpFloating)
@@ -260,12 +297,28 @@ public class Player : MonoBehaviour
             }
         }
 
+        if (walljumpDir != 0)
+        {
+            yVel = walljumpUpForce;
+            xVel = walljumpSideForce * walljumpDir;
+            jumpTimer += Time.fixedDeltaTime;
+            if (jumpTimer >= maxWalljumpTime)
+            {
+                walljumpDir = 0;
+            }
+        }
+
         if (jumpReleaseQueued)
         {
             if (jumpFloating)
             {
                 jumpFloating = false;
                 jumpReleaseQueued = false;
+            }
+
+            if (walljumpDir != 0)
+            {
+                walljumpDir = 0;
             }
 
             if (!jumpQueued)
